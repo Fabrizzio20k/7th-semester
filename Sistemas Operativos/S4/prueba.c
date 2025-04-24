@@ -6,7 +6,7 @@ void thread_0() {
   while (lock != 0)
     ;
   lock = 1;
-  s = 0;
+  s = 0;  
   printf("Thread 0: s = %d\n", s);
   lock = 0;
 }
