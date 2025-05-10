@@ -1,204 +1,188 @@
-#include <algorithm>
-#include <cmath>
+#include "JarvisAndGraham.h"
+#include <chrono>
+#include <iomanip>
 #include <iostream>
+#include <random>
 #include <vector>
 
 using namespace std;
 
 template <typename T>
-T cross_product(const vector<T> &p1, const vector<T> &p2, const vector<T> &p3) {
-  return (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0]);
+vector<vector<T>> generateRandomPointsInCircle(size_t n, T radius) {
+  random_device rd;
+  mt19937 gen(rd());
+  uniform_real_distribution<T> dist_radius(0, radius);
+  uniform_real_distribution<T> dist_angle(0, 2 * M_PI);
+
+  vector<vector<T>> points;
+  for (size_t i = 0; i < n; ++i) {
+    T r = dist_radius(gen);
+    T theta = dist_angle(gen);
+    points.push_back({r * cos(theta), r * sin(theta)});
+  }
+  return points;
 }
 
 template <typename T>
-T distance_squared(const vector<T> &p1, const vector<T> &p2) {
-  return (p1[0] - p2[0]) * (p1[0] - p2[0]) + (p1[1] - p2[1]) * (p1[1] - p2[1]);
+vector<vector<T>> generateRandomPointsOnCircle(size_t n, T radius) {
+  random_device rd;
+  mt19937 gen(rd());
+  uniform_real_distribution<T> dist_angle(0, 2 * M_PI);
+
+  vector<vector<T>> points;
+  for (size_t i = 0; i < n; ++i) {
+    T theta = dist_angle(gen);
+    points.push_back({radius * cos(theta), radius * sin(theta)});
+  }
+  return points;
 }
 
 template <typename T>
-vector<vector<T>> interior_points_removal(vector<vector<T>> const &vertices) {
-  if (vertices.size() <= 3)
-    return vertices;
+vector<vector<T>> generateRandomPointsInRectangle(size_t n, T width, T height) {
+  random_device rd;
+  mt19937 gen(rd());
+  uniform_real_distribution<T> dist_x(0, width);
+  uniform_real_distribution<T> dist_y(0, height);
 
-  vector<vector<T>> extreme_points;
+  vector<vector<T>> points;
+  for (size_t i = 0; i < n; ++i) {
+    points.push_back({dist_x(gen), dist_y(gen)});
+  }
+  return points;
+}
 
-  size_t min_x_idx = 0;
-  for (size_t i = 1; i < vertices.size(); i++) {
-    if (vertices[i][0] < vertices[min_x_idx][0] ||
-        (vertices[i][0] == vertices[min_x_idx][0] &&
-         vertices[i][1] < vertices[min_x_idx][1])) {
-      min_x_idx = i;
+template <typename T>
+vector<vector<T>> generateRandomPointsOnRectangle(size_t n, T width, T height) {
+  random_device rd;
+  mt19937 gen(rd());
+  uniform_real_distribution<T> dist_side(0, 2 * width + 2 * height);
+
+  vector<vector<T>> points;
+  for (size_t i = 0; i < n; ++i) {
+    T p = dist_side(gen);
+    if (p < width) {
+      points.push_back({p, 0});
+    } else if (p < width + height) {
+      points.push_back({width, p - width});
+    } else if (p < 2 * width + height) {
+      points.push_back({2 * width + height - p, height});
+    } else {
+      points.push_back({0, 2 * width + 2 * height - p});
     }
   }
-  extreme_points.push_back(vertices[min_x_idx]);
+  return points;
+}
 
-  size_t max_x_idx = 0;
-  for (size_t i = 1; i < vertices.size(); i++) {
-    if (vertices[i][0] > vertices[max_x_idx][0] ||
-        (vertices[i][0] == vertices[max_x_idx][0] &&
-         vertices[i][1] > vertices[max_x_idx][1])) {
-      max_x_idx = i;
-    }
+template <typename T>
+vector<vector<T>> generateRandomPointsInParabola(size_t n, T a, T xmin,
+                                                 T xmax) {
+  random_device rd;
+  mt19937 gen(rd());
+  uniform_real_distribution<T> dist_x(xmin, xmax);
+
+  vector<vector<T>> points;
+  for (size_t i = 0; i < n; ++i) {
+    T x = dist_x(gen);
+    T y_max = a * x * x;
+    uniform_real_distribution<T> dist_y(0, y_max);
+    T y = dist_y(gen);
+    points.push_back({x, y});
   }
-  if (max_x_idx != min_x_idx)
-    extreme_points.push_back(vertices[max_x_idx]);
+  return points;
+}
 
-  size_t min_y_idx = 0;
-  for (size_t i = 1; i < vertices.size(); i++) {
-    if (vertices[i][1] < vertices[min_y_idx][1] ||
-        (vertices[i][1] == vertices[min_y_idx][1] &&
-         vertices[i][0] < vertices[min_y_idx][0])) {
-      min_y_idx = i;
-    }
+template <typename T>
+vector<vector<T>> generateRandomPointsOnParabola(size_t n, T a, T xmin,
+                                                 T xmax) {
+  random_device rd;
+  mt19937 gen(rd());
+  uniform_real_distribution<T> dist_x(xmin, xmax);
+
+  vector<vector<T>> points;
+  for (size_t i = 0; i < n; ++i) {
+    T x = dist_x(gen);
+    T y = a * x * x;
+    points.push_back({x, y});
   }
-  if (min_y_idx != min_x_idx && min_y_idx != max_x_idx)
-    extreme_points.push_back(vertices[min_y_idx]);
+  return points;
+}
 
-  size_t max_y_idx = 0;
-  for (size_t i = 1; i < vertices.size(); i++) {
-    if (vertices[i][1] > vertices[max_y_idx][1] ||
-        (vertices[i][1] == vertices[max_y_idx][1] &&
-         vertices[i][0] > vertices[max_y_idx][0])) {
-      max_y_idx = i;
-    }
-  }
-  if (max_y_idx != min_x_idx && max_y_idx != max_x_idx &&
-      max_y_idx != min_y_idx)
-    extreme_points.push_back(vertices[max_y_idx]);
+template <typename F, typename... Args>
+double measureExecutionTime(F func, Args &&...args) {
+  auto start = chrono::high_resolution_clock::now();
+  func(forward<Args>(args)...);
+  auto end = chrono::high_resolution_clock::now();
+  return chrono::duration<double, milli>(end - start).count();
+}
 
-  vector<vector<T>> non_interior_points;
-  for (const auto &point : vertices) {
-    bool is_interior = true;
-    for (size_t i = 0; i < extreme_points.size(); i++) {
-      size_t j = (i + 1) % extreme_points.size();
-      T cp = cross_product(extreme_points[i], extreme_points[j], point);
-      if (cp > 0) {
-        is_interior = false;
-        break;
+void runBenchmarks() {
+  vector<size_t> sizes = {1000, 10000, 100000, 1000000, 2000000, 5000000};
+  vector<string> pointDistributions = {
+      "Circulo (interior)", "Circulo (borde)",     "Rectangulo (interior)",
+      "Rectangulo (borde)", "Parabola (interior)", "Parabola (borde)"};
+
+  cout << "+----------------------+----------+-----------------+---------------"
+          "-------+----------------+---------------------+"
+       << endl;
+  cout << "| Distribucion         | Tamano   | Jarvis (ms)     | Jarvis con "
+          "opt (ms) | Graham (ms)    | Graham con opt (ms) |"
+       << endl;
+  cout << "+----------------------+----------+-----------------+---------------"
+          "-------+----------------+---------------------+"
+       << endl;
+
+  for (const auto &distribution : pointDistributions) {
+    for (size_t size : sizes) {
+      if (size > 100000 && (distribution == "Circulo (borde)" ||
+                            distribution == "Rectangulo (borde)" ||
+                            distribution == "Parabola (borde)")) {
+        size = min(size, (size_t)100000);
       }
-    }
-    if (!is_interior) {
-      non_interior_points.push_back(point);
-    }
-  }
 
-  return non_interior_points;
-}
+      vector<vector<double>> points;
 
-template <typename T>
-std::vector<std::vector<T>> jarvis(std::vector<std::vector<T>> const &vertices,
-                                   bool withInteriorPointsRemoval) {
-  if (vertices.size() <= 3)
-    return vertices;
-
-  std::vector<std::vector<T>> points = vertices;
-  if (withInteriorPointsRemoval) {
-    points = interior_points_removal(vertices);
-  }
-
-  if (points.size() <= 3)
-    return points;
-
-  std::vector<std::vector<T>> hull;
-
-  size_t leftmost = 0;
-  for (size_t i = 1; i < points.size(); i++) {
-    if (points[i][1] < points[leftmost][1] ||
-        (points[i][1] == points[leftmost][1] &&
-         points[i][0] < points[leftmost][0])) {
-      leftmost = i;
-    }
-  }
-
-  size_t p = leftmost;
-  size_t q;
-  do {
-    hull.push_back(points[p]);
-
-    q = (p + 1) % points.size();
-
-    for (size_t i = 0; i < points.size(); i++) {
-      T orientation = cross_product(points[p], points[i], points[q]);
-      if (orientation > 0) {
-        q = i;
-      } else if (orientation == 0) {
-        if (distance_squared(points[p], points[i]) >
-            distance_squared(points[p], points[q])) {
-          q = i;
-        }
+      if (distribution == "Circulo (interior)") {
+        points = generateRandomPointsInCircle<double>(size, 1000.0);
+      } else if (distribution == "Circulo (borde)") {
+        points = generateRandomPointsOnCircle<double>(size, 1000.0);
+      } else if (distribution == "Rectangulo (interior)") {
+        points = generateRandomPointsInRectangle<double>(size, 1000.0, 1000.0);
+      } else if (distribution == "Rectangulo (borde)") {
+        points = generateRandomPointsOnRectangle<double>(size, 1000.0, 1000.0);
+      } else if (distribution == "Parabola (interior)") {
+        points =
+            generateRandomPointsInParabola<double>(size, 0.01, -100.0, 100.0);
+      } else if (distribution == "Parabola (borde)") {
+        points =
+            generateRandomPointsOnParabola<double>(size, 0.01, -100.0, 100.0);
       }
+
+      double jarvisTime =
+          measureExecutionTime([&]() { jarvis(points, false); });
+
+      double jarvisOptTime =
+          measureExecutionTime([&]() { jarvis(points, true); });
+
+      double grahamTime =
+          measureExecutionTime([&]() { graham(points, false); });
+
+      double grahamOptTime =
+          measureExecutionTime([&]() { graham(points, true); });
+
+      cout << "| " << left << setw(20) << distribution << " | " << right
+           << setw(8) << size << " | " << right << setw(15) << fixed
+           << setprecision(2) << jarvisTime << " | " << right << setw(20)
+           << jarvisOptTime << " | " << right << setw(14) << grahamTime << " | "
+           << right << setw(19) << grahamOptTime << " |" << endl;
     }
+  }
 
-    p = q;
-
-  } while (p != leftmost);
-
-  return hull;
+  cout << "+----------------------+----------+-----------------+---------------"
+          "-------+----------------+---------------------+"
+       << endl;
 }
 
-template <typename T>
-std::vector<std::vector<T>> graham(std::vector<std::vector<T>> const &vertices,
-                                   bool withInteriorPointsRemoval) {
-  if (vertices.size() <= 3)
-    return vertices;
-
-  std::vector<std::vector<T>> points = vertices;
-  if (withInteriorPointsRemoval) {
-    points = interior_points_removal(vertices);
-  }
-
-  if (points.size() <= 3)
-    return points;
-
-  size_t lowest = 0;
-  for (size_t i = 1; i < points.size(); i++) {
-    if (points[i][1] < points[lowest][1] ||
-        (points[i][1] == points[lowest][1] &&
-         points[i][0] < points[lowest][0])) {
-      lowest = i;
-    }
-  }
-
-  std::swap(points[0], points[lowest]);
-
-  std::vector<T> pivot = points[0];
-  std::sort(points.begin() + 1, points.end(),
-            [&pivot](const std::vector<T> &a, const std::vector<T> &b) -> bool {
-              T orient = cross_product(pivot, a, b);
-              if (orient == 0) {
-                return distance_squared(pivot, a) < distance_squared(pivot, b);
-              }
-              return orient > 0;
-            });
-
-  int m = 1;
-  for (size_t i = 1; i < points.size(); i++) {
-    while (i < points.size() - 1 &&
-           cross_product(pivot, points[i], points[i + 1]) == 0) {
-      i++;
-    }
-    points[m] = points[i];
-    m++;
-  }
-
-  if (m < 3)
-    return points;
-
-  std::vector<std::vector<T>> hull;
-  hull.push_back(points[0]);
-  hull.push_back(points[1]);
-  hull.push_back(points[2]);
-
-  for (int i = 3; i < m; i++) {
-    while (hull.size() >= 2 &&
-           cross_product(hull[hull.size() - 2], hull[hull.size() - 1],
-                         points[i]) <= 0) {
-      hull.pop_back();
-    }
-    hull.push_back(points[i]);
-  }
-
-  return hull;
+int main() {
+  runBenchmarks();
+  return 0;
 }
-
-int main() {}
