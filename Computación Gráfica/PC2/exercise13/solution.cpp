@@ -7,21 +7,20 @@
 using namespace std;
 
 template <typename T>
-double perpendicularDistance(const vector<T> &point, const vector<T> &lineStart,
-                             const vector<T> &lineEnd) {
-  if (lineStart == lineEnd) {
-    double dx = point[0] - lineStart[0];
-    double dy = point[1] - lineStart[1];
+double perpendicularDistance(const vector<T> &p, const vector<T> &inicio,
+                             const vector<T> &fin) {
+  if (inicio == fin) {
+    double dx = p[0] - inicio[0];
+    double dy = p[1] - inicio[1];
     return sqrt(dx * dx + dy * dy);
   }
 
-  double dx = lineEnd[0] - lineStart[0];
-  double dy = lineEnd[1] - lineStart[1];
+  double dx = fin[0] - inicio[0];
+  double dy = fin[1] - inicio[1];
 
   double norm = sqrt(dx * dx + dy * dy);
 
-  return abs((point[1] - lineStart[1]) * dx - (point[0] - lineStart[0]) * dy) /
-         norm;
+  return abs((p[1] - inicio[1]) * dx - (p[0] - inicio[0]) * dy) / norm;
 }
 
 template <typename T>
