@@ -1,0 +1,95 @@
+# ITEM 1: Spinlock con Test-and-Set en x86 Assembly
+
+.section .data
+    lock_var: .long 0    # Variable del lock (0=libre, 1=ocupado)
+
+.section .text
+    .globl acquire_spinlock
+    .globl release_spinlock
+
+acquire_spinlock:
+    movl $1, %eax        # Cargar valor 1 en EAX (valor a intercambiar)
+spin_loop:
+    xchgl %eax, lock_var # Test-and-set atómico: intercambiar EAX con lock_var
+    testl %eax, %eax     # Verificar si el valor anterior era 0 (libre)
+    jnz spin_loop        # Si no era 0, seguir esperando (spinning)
+    ret                  # Lock adquirido, retornar
+
+release_spinlock:
+    movl $0, lock_var    # Liberar el lock (escribir 0)
+    ret
+
+/*
+ITEM 2: ¿Es necesario que cada assignment en Peterson sea atómico?
+
+SÍ, es necesario que cada assignment sea atómico. En el algoritmo de Peterson:
+- flag[i] = true
+- turn = j
+- while (flag[j] && turn == j)
+
+Si los assignments no son atómicos, pueden ocurrir escrituras parciales donde otro 
+procesador vea valores inconsistentes. Por ejemplo, si flag[i] = true se ejecuta
+en múltiples instrucciones y otro procesador lee entre esas instrucciones, podría
+ver un estado intermedio inválido que rompa la exclusión mutua.
+
+ITEM 3: ¿Puede fallar Peterson con write buffers y bypassing?
+
+SÍ, el algoritmo de Peterson PUEDE FALLAR con write buffers que permiten bypassing.
+
+Problema: En Peterson, cada procesador debe ver las escrituras del otro en orden
+correcto. Con write buffers:
+
+Procesador A ejecuta:        Procesador B ejecuta:
+flag[A] = true              flag[B] = true  
+turn = B                    turn = A
+read flag[B]                read flag[A]
+
+Si ambos procesadores pueden hacer bypass de sus propias escrituras pero no ven
+las escrituras del otro procesador hasta que salen del buffer, ambos pueden leer
+flag[other] = false simultáneamente y entrar en la sección crítica.
+
+Solución: Se necesitan memory barriers/fences para garantizar que las escrituras
+sean visibles antes de las lecturas subsecuentes.
+
+ITEM 4: Problema Readers-Writers con semáforos
+
+En la implementación clásica readers-writers:
+- readcount: contador de lectores activos
+- mutex: protege readcount  
+- wrt: semáforo para escritores
+
+¿Por qué escritores siempre adquieren wrt?
+Los escritores necesitan exclusión completa (no otros escritores ni lectores),
+por eso siempre toman wrt.
+
+¿Por qué lectores solo toman wrt cuando son el primero?
+Los lectores pueden coexistir entre sí. Solo el primer lector toma wrt para 
+bloquear escritores. Los demás solo incrementan readcount.
+
+¿Qué pasa si un lector no decrementa readcount?
+Si readcount nunca llega a 0, wrt nunca se libera y los escritores quedan 
+bloqueados permanentemente (deadlock).
+
+¿Problema de starvation de escritores?
+Con flujo continuo de lectores, readcount nunca llega a 0, causando starvation
+de escritores.
+
+¿Cómo priorizar escritores?
+Agregar un semáforo adicional que bloquee nuevos lectores cuando hay escritores
+esperando:
+
+sem_t read_try;  // Controla entrada de nuevos lectores
+
+// Lector modificado:
+sem_wait(&read_try);
+sem_wait(&mutex);
+// ... resto igual ...
+sem_post(&read_try);
+
+// Escritor modificado:
+sem_wait(&read_try);  // Bloquear nuevos lectores
+sem_wait(&wrt);
+// ... escribir ...
+sem_post(&wrt);
+sem_post(&read_try);  // Permitir lectores
+*/
