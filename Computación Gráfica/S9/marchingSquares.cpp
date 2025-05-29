@@ -1,4 +1,4 @@
-#include "marchingSquaresCases.h"
+#include "sCases.h"
 
 using namespace std;
 

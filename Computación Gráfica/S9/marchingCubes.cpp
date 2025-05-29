@@ -1,4 +1,4 @@
-#include "marchingCubesCases.h"
+#include "cCases.h"
 
 class MarchingCubes {
 private:
