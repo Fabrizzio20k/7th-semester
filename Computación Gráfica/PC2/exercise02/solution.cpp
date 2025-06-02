@@ -1,3 +1,6 @@
+#define _USE_MATH_DEFINES
+
+#include <climits>
 #include <cmath>
 #include <gtest/gtest.h>
 #include <iostream>

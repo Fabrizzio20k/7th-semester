@@ -126,7 +126,7 @@ vector<Point<T>> clipPolygon(const vector<Point<T>> &subject,
   return result;
 }
 
-template <typename T> double calculateArea(const vector<Point<T>> &polygon) {
+template <typename T> double area(const vector<Point<T>> &polygon) {
   long double area = 0.0;
   int n = polygon.size();
 
@@ -157,7 +157,7 @@ double area_of_intersection(vector<vector<T>> const &vertices1,
     return 0.0;
   }
 
-  return calculateArea(intersection);
+  return area(intersection);
 }
 
 int main() {
