@@ -3,6 +3,8 @@
 
 #include "Point.h"
 
+using namespace std;
+
 struct MBB {
   Point minCorner, maxCorner;
 
@@ -12,34 +14,27 @@ struct MBB {
   MBB(const MBB &other)
       : minCorner(other.minCorner), maxCorner(other.maxCorner) {}
 
-  void expandToInclude(const MBB &other);
-  void expandToInclude(const Point &p);
-  static float maxDist(const Point &p, const MBB &box);
+  void expandToInclude(const MBB &other) {
+    for (size_t i = 0; i < DIM; ++i) {
+      minCorner[i] = min(minCorner[i], other.minCorner[i]);
+      maxCorner[i] = max(maxCorner[i], other.maxCorner[i]);
+    }
+  }
+  void expandToInclude(const Point &p) {
+    for (size_t i = 0; i < DIM; ++i) {
+      minCorner[i] = min(minCorner[i], p[i]);
+      maxCorner[i] = max(maxCorner[i], p[i]);
+    }
+  }
+  static float maxDist(const Point &p, const MBB &box) {
+    float maxDistSq = 0.0f;
+    for (size_t i = 0; i < DIM; ++i) {
+      float d1 = abs(p[i] - box.minCorner[i]);
+      float d2 = abs(p[i] - box.maxCorner[i]);
+      float maxD = max(d1, d2);
+      maxDistSq += maxD * maxD;
+    }
+    return sqrt(maxDistSq);
+  }
 };
-
-void MBB::expandToInclude(const MBB &other) {
-  for (std::size_t i = 0; i < DIM; ++i) {
-    minCorner[i] = std::min(minCorner[i], other.minCorner[i]);
-    maxCorner[i] = std::max(maxCorner[i], other.maxCorner[i]);
-  }
-}
-
-void MBB::expandToInclude(const Point &p) {
-  for (std::size_t i = 0; i < DIM; ++i) {
-    minCorner[i] = std::min(minCorner[i], p[i]);
-    maxCorner[i] = std::max(maxCorner[i], p[i]);
-  }
-}
-
-float MBB::maxDist(const Point &p, const MBB &box) {
-  float maxDistSq = 0.0f;
-  for (std::size_t i = 0; i < DIM; ++i) {
-    float d1 = std::abs(p[i] - box.minCorner[i]);
-    float d2 = std::abs(p[i] - box.maxCorner[i]);
-    float maxD = std::max(d1, d2);
-    maxDistSq += maxD * maxD;
-  }
-  return std::sqrt(maxDistSq);
-}
-
 #endif // MBB_H
