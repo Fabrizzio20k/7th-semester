@@ -108,13 +108,15 @@ void draw_curve(function<double(double, double)> f, string output_filename,
 }
 
 int main() {
-  auto circle = [](double x, double y) { return x * x + y * y - 1.0; };
   auto funcion_desconocida = [](double x, double y) {
     return 0.004 + 0.110 * x - 0.177 * y - 0.174 * x * x + 0.224 * x * y -
            0.303 * y * y - 0.168 * x * x * x + 0.327 * x * x * y -
            0.087 * x * y * y - 0.013 * y * y * y + 0.235 * x * x * x * x -
            0.667 * x * x * x * y + 0.745 * x * x * y * y -
            0.029 * x * y * y * y + 0.072 * y * y * y * y;
+  };
+  auto circle = [](double x, double y) {
+    return (x - 2) * (x - 2) + (y - 2) * (y - 2) - 1;
   };
   auto sector = [](double x, double y) {
     double cx = 5.0, cy = 5.0; // Centro del círculo
@@ -144,9 +146,6 @@ int main() {
       return -1.0; // Negativo: fuera del círculo O en la parte cortada
     }
   };
-  draw_curve(circle, "circulo_adaptivo.eps", -1.5, -1.5, 1.5, 1.5, 0.01);
-  draw_curve(funcion_desconocida, "funcion_desconocida_adaptiva.eps", -2.0,
-             -2.0, 2.0, 2.0, 0.01);
-  draw_curve(sector, "sector_adaptivo.eps", 2.0, 2.0, 8.0, 8.0, 0.01);
+  draw_curve(circle, "circulo_adaptivo.eps", -5, -5, 6, 6, 0.1);
   return 0;
 }
