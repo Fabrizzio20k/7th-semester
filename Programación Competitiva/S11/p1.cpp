@@ -1,10 +1,29 @@
-#include <bits/stdc++.h>
 #define _USE_MATH_DEFINES
 #include <algorithm>
+#include <array>
+#include <bitset>
+#include <cassert>
 #include <chrono>
 #include <cmath>
+#include <functional>
+#include <iomanip>
 #include <iostream>
+#include <iterator>
+#include <limits>
+#include <map>
 #include <numeric>
+#include <queue>
+#include <random>
+#include <set>
+#include <sstream>
+#include <stack>
+#include <string>
+#include <tuple>
+#include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 using namespace std;
 
@@ -57,31 +76,60 @@ auto binpow = [](ll a, ll b, ll m) {
 };
 
 ll gcd(ll a, ll b) {
-  if (b == 0)
-    return a;
-  return gcd(b, a % b);
+  while (b != 0) {
+    ll temp = b;
+    b = a % b;
+    a = temp;
+  }
+  return a;
 }
 
 void solve() {
-  ll n, k;
-  cin >> n >> k;
+  ll t;
+  cin >> t;
 
-  ll ans = n;
+  while (t--) {
+    ll a, b, x;
+    cin >> a >> b >> x;
 
-  for (ll i = 1; i * i <= n; i++) {
-    if (n % i == 0) {
-      if (i <= k) {
-        ans = min(ans, n / i);
+    if (a == x || b == x) {
+      cout << "YES" << endl;
+      continue;
+    }
+
+    if (x > max(a, b) || x % gcd(a, b) != 0) {
+      cout << "NO" << endl;
+      continue;
+    }
+
+    bool found = false;
+    while (a > 0 && b > 0 && !found) {
+      if (a == x || b == x) {
+        found = true;
+        break;
       }
 
-      ll j = n / i;
-      if (j <= k) {
-        ans = min(ans, n / j);
+      if (a > b) {
+        if (x >= b && a >= x + b) {
+          a = a % b;
+          if (a == 0)
+            a = b;
+        } else {
+          a = a % b;
+        }
+      } else {
+        if (x >= a && b >= x + a) {
+          b = b % a;
+          if (b == 0)
+            b = a;
+        } else {
+          b = b % a;
+        }
       }
     }
-  }
 
-  cout << ans << "\n";
+    cout << (found ? "YES" : "NO") << endl;
+  }
 }
 
 int main() {
@@ -89,8 +137,8 @@ int main() {
   cin.tie(0);
   cout.tie(0);
   ll tc = 1;
-  cin >> tc;
-  cin.ignore();
+  // cin >> tc;
+  // cin.ignore();
   for (int t = 1; t <= tc; t++) {
     // cout << "Case #" << t << ": ";
     solve();
