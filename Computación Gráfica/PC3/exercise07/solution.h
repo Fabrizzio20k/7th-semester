@@ -13,12 +13,15 @@ using namespace std;
 
 struct Punto {
   float x, y, z;
-  float u, v;
 };
 
 struct Cara {
   int v1, v2, v3;
 };
 
-void sphere_with_texture(string full_path_input_ply, string full_path_texture,
-                         vector<float> center, string full_path_output_ply);
+struct Vector {
+  float dx, dy, dz;
+};
+
+void translate_mesh(string full_path_input_mesh, Vector d,
+                    string full_path_output_mesh);
