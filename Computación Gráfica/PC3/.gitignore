@@ -2,3 +2,12 @@
 *.exe
 *.ply
 *.eps
+*.ppm
+.DS_Store
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.tiff
+*.bmp
+*.svg
