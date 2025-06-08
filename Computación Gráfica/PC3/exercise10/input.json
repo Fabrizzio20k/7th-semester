@@ -1,38 +1,16 @@
 {
-    "op": "union",
+    "op": "intersection",
     "function": "",
     "childs": [
         {
-            "op": "diff",
-            "function": "",
-            "childs": [
-                {
-                    "op": "",
-                    "function": "x^2+y^2-25",
-                    "childs": []
-                },
-                {
-                    "op": "",
-                    "function": "x^2+y^2-9",
-                    "childs": []
-                }
-            ]
+            "op": "",
+            "function": "x^2+y^2-4",
+            "childs": []
         },
         {
-            "op": "intersection",
-            "function": "",
-            "childs": [
-                {
-                    "op": "",
-                    "function": "(x-6)^2+y^2-4",
-                    "childs": []
-                },
-                {
-                    "op": "",
-                    "function": "y-1",
-                    "childs": []
-                }
-            ]
+            "op": "",
+            "function": "(x-2)^2+y^2-4",
+            "childs": []
         }
     ]
 }

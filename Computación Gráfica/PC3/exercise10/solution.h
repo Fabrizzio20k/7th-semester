@@ -117,7 +117,7 @@ private:
     string result = expr;
 
     size_t pos = 0;
-    while ((pos = result.find("^2", pos)) != string::npos) {
+    while ((pos = result.find("^", pos)) != string::npos) {
       int start = pos - 1;
       int parenCount = 0;
       bool inParen = false;
@@ -135,17 +135,62 @@ private:
         }
         start++;
       } else {
-        while (start >= 0 && (isdigit(result[start]) || result[start] == '.')) {
+        while (start >= 0 && (isalnum(result[start]) || result[start] == '.' ||
+                              result[start] == '_')) {
           start--;
         }
         start++;
       }
 
       string base = result.substr(start, pos - start);
-      string replacement = base + "*" + base;
 
-      result = result.substr(0, start) + replacement + result.substr(pos + 2);
-      pos = start + replacement.length();
+      int expStart = pos + 1;
+      int expEnd = expStart;
+
+      if (expEnd < result.length() &&
+          (result[expEnd] == '+' || result[expEnd] == '-')) {
+        expEnd++;
+      }
+
+      while (expEnd < result.length() &&
+             (isdigit(result[expEnd]) || result[expEnd] == '.')) {
+        expEnd++;
+      }
+
+      if (expEnd == expStart ||
+          (expEnd == expStart + 1 &&
+           (result[expStart] == '+' || result[expStart] == '-'))) {
+        pos++;
+        continue;
+      }
+
+      string expStr = result.substr(expStart, expEnd - expStart);
+
+      try {
+        double exponent = stod(expStr);
+
+        if (exponent == floor(exponent) && exponent > 0 && exponent <= 10) {
+          int exp = (int)exponent;
+          string replacement = "";
+
+          if (exp == 1) {
+            replacement = base;
+          } else {
+            replacement = base;
+            for (int i = 1; i < exp; i++) {
+              replacement += "*" + base;
+            }
+          }
+
+          result = result.substr(0, start) + "(" + replacement + ")" +
+                   result.substr(expEnd);
+          pos = start + replacement.length() + 2;
+        } else {
+          pos++;
+        }
+      } catch (...) {
+        pos++;
+      }
     }
 
     return result;
