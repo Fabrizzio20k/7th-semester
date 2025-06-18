@@ -32,8 +32,6 @@ void painter_algorithm_simple_cosine_illumination(
   } else {
     image.savePNG(full_path_output_image);
   }
-
-  cout << "Image saved to: " << full_path_output_image << endl;
 }
 
 int main() {

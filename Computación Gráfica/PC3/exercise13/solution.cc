@@ -39,8 +39,6 @@ void painter_algorithm_textures(std::string const &full_path_input_mesh,
   } else {
     image.savePNG(full_path_output_image);
   }
-
-  cout << "Textured image saved to: " << full_path_output_image << endl;
 }
 
 int main() {
