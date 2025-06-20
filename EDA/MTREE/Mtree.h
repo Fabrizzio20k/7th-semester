@@ -61,7 +61,7 @@ public:
     _pivotDist = distances;
   }
 
-  std::size_t size() const noexcept {
+  size_t size() const noexcept {
     return _isLeaf ? _objects.size() : _children.size();
   }
 
@@ -71,19 +71,19 @@ public:
       return;
 
     if (_isLeaf) {
-      std::size_t idx = 0;
+      size_t idx = 0;
       while (idx < _objects.size()) {
-        std::size_t dist = _pivot->distance(*_objects[idx]);
+        size_t dist = _pivot->distance(*_objects[idx]);
         if (dist > _radius) {
           _radius = dist;
         }
         idx++;
       }
     } else {
-      std::size_t i = 0;
+      size_t i = 0;
       while (i < _children.size()) {
         if (_children[i]->_pivot) {
-          std::size_t dist =
+          size_t dist =
               _pivot->distance(*_children[i]->_pivot) + _children[i]->_radius;
           if (dist > _radius) {
             _radius = dist;
@@ -99,7 +99,7 @@ public:
       return;
 
     _pivotDist.clear();
-    std::size_t i = 0;
+    size_t i = 0;
     while (i < _children.size()) {
       if (_children[i]->_pivot) {
         _pivotDist.push_back(_pivot->distance(*_children[i]->_pivot));
@@ -108,12 +108,12 @@ public:
     }
   }
 
-  bool insert(const Object &obj, std::size_t maxEntries) {
+  bool insert(const Object &obj, size_t maxEntries) {
     if (_isLeaf) {
       _objects.push_back(const_cast<Object *>(&obj));
       if (_pivot) {
         _pivotDist.push_back(_pivot->distance(obj));
-        std::size_t dist = _pivot->distance(obj);
+        size_t dist = _pivot->distance(obj);
         if (dist > _radius) {
           _radius = dist;
         }
@@ -121,12 +121,12 @@ public:
       return _objects.size() > maxEntries;
     }
 
-    std::size_t minDist = SIZE_MAX;
+    size_t minDist = SIZE_MAX;
     MNode *sel = nullptr;
 
-    std::size_t i = 0;
+    size_t i = 0;
     while (i < _children.size()) {
-      std::size_t d = _children[i]->_pivot->distance(obj);
+      size_t d = _children[i]->_pivot->distance(obj);
       if (d < minDist) {
         minDist = d;
         sel = _children[i];
@@ -152,13 +152,13 @@ public:
 
       Object *pivot1 = allObjs[0];
       Object *pivot2 = allObjs[1];
-      std::size_t maxDist = 0;
+      size_t maxDist = 0;
 
-      std::size_t x = 0;
+      size_t x = 0;
       while (x < allObjs.size()) {
-        std::size_t y = x + 1;
+        size_t y = x + 1;
         while (y < allObjs.size()) {
-          std::size_t dist = allObjs[x]->distance(*allObjs[y]);
+          size_t dist = allObjs[x]->distance(*allObjs[y]);
           if (dist > maxDist) {
             maxDist = dist;
             pivot1 = allObjs[x];
@@ -175,11 +175,11 @@ public:
       MNode *newNode = new MNode(this, true, pivot2,
                                  _pivot ? _pivot->distance(*pivot2) : 0, 0);
 
-      std::size_t objIdx = 0;
+      size_t objIdx = 0;
       while (objIdx < allObjs.size()) {
         Object *currentObj = allObjs[objIdx];
-        std::size_t dist1 = pivot1->distance(*currentObj);
-        std::size_t dist2 = pivot2->distance(*currentObj);
+        size_t dist1 = pivot1->distance(*currentObj);
+        size_t dist2 = pivot2->distance(*currentObj);
 
         if (dist1 <= dist2) {
           sel->_objects.push_back(currentObj);
@@ -212,13 +212,13 @@ public:
     if (!_pivot)
       return;
 
-    std::size_t pivotDist = _pivot->distance(query);
+    size_t pivotDist = _pivot->distance(query);
 
     if (pivotDist > searchRadius + _radius)
       return;
 
     if (_isLeaf) {
-      std::size_t i = 0;
+      size_t i = 0;
       while (i < _objects.size()) {
         if (_objects[i]->distance(query) <= searchRadius) {
           result.push_back(_objects[i]);
@@ -226,10 +226,9 @@ public:
         i++;
       }
     } else {
-      std::size_t childIdx = 0;
+      size_t childIdx = 0;
       while (childIdx < _children.size()) {
-        std::size_t childPivotDist =
-            _children[childIdx]->_pivot->distance(query);
+        size_t childPivotDist = _children[childIdx]->_pivot->distance(query);
         if (childPivotDist <= searchRadius + _children[childIdx]->_radius) {
           _children[childIdx]->rangeSearch(query, searchRadius, result);
         }
@@ -242,26 +241,26 @@ private:
   MNode *_parent;
   bool _isLeaf;
   Object *_pivot;
-  std::size_t _parentDistance;
-  std::size_t _radius;
+  size_t _parentDistance;
+  size_t _radius;
   std::vector<Object *> _objects;
   std::vector<MNode *> _children;
-  std::vector<std::size_t> _pivotDist;
+  std::vector<size_t> _pivotDist;
 };
 
 class MTree {
 private:
   MNode *_root;
-  std::size_t _maxEntries;
+  size_t _maxEntries;
 
 public:
-  explicit MTree(std::size_t maxEntries = 10)
+  explicit MTree(size_t maxEntries = 10)
       : _root(nullptr), _maxEntries(maxEntries) {}
 
   ~MTree() { delete _root; }
 
   MNode *root() const noexcept { return _root; }
-  std::size_t maxEntries() const noexcept { return _maxEntries; }
+  size_t maxEntries() const noexcept { return _maxEntries; }
 
   void insert(const Object &obj) {
     if (!_root) {
@@ -272,7 +271,7 @@ public:
       initialObjs.push_back(const_cast<Object *>(&obj));
       _root->setObjects(initialObjs);
 
-      std::vector<std::size_t> initialDists;
+      std::vector<size_t> initialDists;
       initialDists.push_back(0);
       _root->setPivotDistances(initialDists);
 
@@ -294,7 +293,7 @@ public:
       oldRoot->setParentDistance(0);
       _root->setPivot(oldRoot->pivot());
 
-      std::vector<std::size_t> rootDists;
+      std::vector<size_t> rootDists;
       rootDists.push_back(0);
       _root->setPivotDistances(rootDists);
       _root->setRadius(oldRoot->radius());
@@ -308,7 +307,7 @@ public:
     std::vector<Object *> searchResults;
     _root->rangeSearch(obj, 0, searchResults);
 
-    std::size_t i = 0;
+    size_t i = 0;
     while (i < searchResults.size()) {
       if (searchResults[i]->str() == obj.str())
         return true;
@@ -318,7 +317,7 @@ public:
   }
 
   std::vector<Object *> rangeSearch(const Object &query,
-                                    std::size_t searchRadius) const {
+                                    size_t searchRadius) const {
     std::vector<Object *> results;
     if (_root) {
       _root->rangeSearch(query, searchRadius, results);
@@ -326,8 +325,7 @@ public:
     return results;
   }
 
-  std::vector<Object *> kNearestNeighbors(const Object &query,
-                                          std::size_t k) const {
+  std::vector<Object *> kNearestNeighbors(const Object &query, size_t k) const {
     if (!_root || k == 0)
       return {};
 
@@ -337,13 +335,13 @@ public:
         return;
 
       if (node->isLeaf()) {
-        std::size_t i = 0;
+        size_t i = 0;
         while (i < node->objects().size()) {
           allObjs.push_back(node->objects()[i]);
           i++;
         }
       } else {
-        std::size_t i = 0;
+        size_t i = 0;
         while (i < node->children().size()) {
           collectAllObjects(node->children()[i]);
           i++;
@@ -353,24 +351,24 @@ public:
 
     collectAllObjects(_root);
 
-    std::vector<std::pair<std::size_t, Object *>> distanceObjectPairs;
-    std::size_t i = 0;
+    std::vector<std::pair<size_t, Object *>> d;
+    size_t i = 0;
     while (i < allObjs.size()) {
-      std::size_t dist = allObjs[i]->distance(query);
-      distanceObjectPairs.push_back({dist, allObjs[i]});
+      size_t dist = allObjs[i]->distance(query);
+      d.push_back({dist, allObjs[i]});
       i++;
     }
 
-    std::sort(distanceObjectPairs.begin(), distanceObjectPairs.end());
+    std::sort(d.begin(), d.end());
 
-    std::vector<Object *> kNearestResults;
-    std::size_t idx = 0;
-    while (idx < k && idx < distanceObjectPairs.size()) {
-      kNearestResults.push_back(distanceObjectPairs[idx].second);
+    std::vector<Object *> kRes;
+    size_t idx = 0;
+    while (idx < k && idx < d.size()) {
+      kRes.push_back(d[idx].second);
       idx++;
     }
 
-    return kNearestResults;
+    return kRes;
   }
 };
 
