@@ -63,98 +63,49 @@ const ll MOD = 10000007;
 const ll INF = 1e9;
 const ld EPS = 1e-9;
 
-auto binpow = [](ll a, ll b, ll m) {
-  // a %= m;
-  ll res = 1;
-  while (b > 0) {
-    if (b & 1)
-      res = res * a;
-    a = a * a;
-    b >>= 1;
-  }
-  return res;
-};
+const int N = 20000;
+long long n, a[N], b[N];
+vector<long long> g[N], q, ga, gb;
+int used[N];
 
-ll gcd(ll a, ll b) {
-  while (b != 0) {
-    ll temp = b;
-    b = a % b;
-    a = temp;
-  }
-  return a;
-}
-
-int gcd(int a, int b) { return b ? gcd(b, a % b) : a; }
-
-int N;
-vector<int> seg;
-
-void build(const vector<int> &a) {
-  N = a.size();
-  seg.assign(2 * N, 0);
-  for (int i = 0; i < N; i++)
-    seg[N + i] = a[i];
-  for (int i = N - 1; i > 0; i--)
-    seg[i] = gcd(seg[i << 1], seg[i << 1 | 1]);
-}
-
-int query_gcd(int l, int r) {
-  int res = 0;
-  for (l += N, r += N; l <= r; l >>= 1, r >>= 1) {
-    if (l & 1) {
-      res = res ? gcd(res, seg[l]) : seg[l];
-      l++;
-    }
-    if (!(r & 1)) {
-      res = res ? gcd(res, seg[r]) : seg[r];
-      r--;
+void dfs(int v, int p = -1) {
+  used[v] = 1;
+  for (long long u : g[v]) {
+    if (u == p)
+      continue;
+    if (!used[u])
+      dfs(u, v);
+    if (used[v] == 1 && used[u] == 1) {
+      ga.push_back(u);
+      gb.push_back(v);
     }
   }
-  return res;
-}
-
-void solve() {
-  ios::sync_with_stdio(false);
-  cin.tie(nullptr);
-
-  int n;
-  cin >> n;
-  vector<int> f(n);
-  for (int i = 0; i < n; i++)
-    cin >> f[i];
-
-  build(f);
-
-  unordered_map<int, vector<int>> pos;
-  pos.reserve(n * 2);
-  for (int i = 0; i < n; i++) {
-    pos[f[i]].push_back(i);
-  }
-
-  int q;
-  cin >> q;
-  while (q--) {
-    int l, r;
-    cin >> l >> r;
-    --l;
-    --r;
-    int g = query_gcd(l, r);
-    auto &v = pos[g];
-    int cnt =
-        upper_bound(v.begin(), v.end(), r) - lower_bound(v.begin(), v.end(), l);
-    cout << (r - l + 1) - cnt << "\n";
-  }
+  used[v] = 2;
 }
 
 int main() {
-  ios_base::sync_with_stdio(0);
-  cin.tie(0);
-  cout.tie(0);
-  ll tc = 1;
-  // cin >> tc;
-  // cin.ignore();
-  for (int t = 1; t <= tc; t++) {
-    // cout << "Case #" << t << ": ";
-    solve();
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  cin >> n;
+  for (int i = 1; i < n; i++) {
+    cin >> a[i] >> b[i];
+    g[a[i]].push_back(b[i]);
+    g[b[i]].push_back(a[i]);
   }
+
+  for (int i = 1; i <= n; i++) {
+    if (!used[i]) {
+      q.push_back(i);
+      dfs(i);
+    }
+  }
+
+  reverse(q.begin(), q.end());
+  cout << q.size() - 1 << '\n';
+  for (size_t i = 0; i + 1 < q.size(); i++) {
+    cout << ga[i] << ' ' << gb[i] << ' ' << q[i] << ' ' << q[i + 1] << '\n';
+  }
+
+  return 0;
 }
