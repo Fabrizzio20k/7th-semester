@@ -84,65 +84,70 @@ ll gcd(ll a, ll b) {
   return a;
 }
 
-int gcd(int a, int b) { return b ? gcd(b, a % b) : a; }
+struct Node {
+  ll sum, pref, suff, ans;
+};
 
-int N;
-vector<int> seg;
-
-void build(const vector<int> &a) {
-  N = a.size();
-  seg.assign(2 * N, 0);
-  for (int i = 0; i < N; i++)
-    seg[N + i] = a[i];
-  for (int i = N - 1; i > 0; i--)
-    seg[i] = gcd(seg[i << 1], seg[i << 1 | 1]);
-}
-
-int query_gcd(int l, int r) {
-  int res = 0;
-  for (l += N, r += N; l <= r; l >>= 1, r >>= 1) {
-    if (l & 1) {
-      res = res ? gcd(res, seg[l]) : seg[l];
-      l++;
-    }
-    if (!(r & 1)) {
-      res = res ? gcd(res, seg[r]) : seg[r];
-      r--;
-    }
-  }
+Node combine(Node l, Node r) {
+  Node res;
+  res.sum = l.sum + r.sum;
+  res.pref = max(l.pref, l.sum + r.pref);
+  res.suff = max(r.suff, r.sum + l.suff);
+  res.ans = max({l.ans, r.ans, l.suff + r.pref});
   return res;
 }
 
+Node makeNode(ll val) {
+  Node res;
+  res.sum = val;
+  res.pref = res.suff = res.ans = max(0LL, val);
+  return res;
+}
+
+vector<Node> t;
+
+void build(vector<ll> &a, ll v, ll tl, ll tr) {
+  if (tl == tr) {
+    t[v] = makeNode(a[tl]);
+  } else {
+    ll tm = (tl + tr) / 2;
+    build(a, 2 * v, tl, tm);
+    build(a, 2 * v + 1, tm + 1, tr);
+    t[v] = combine(t[2 * v], t[2 * v + 1]);
+  }
+}
+
+void upd(ll v, ll tl, ll tr, ll pos, ll val) {
+  if (tl == tr) {
+    t[v] = makeNode(val);
+  } else {
+    ll tm = (tl + tr) / 2;
+    if (pos <= tm) {
+      upd(2 * v, tl, tm, pos, val);
+    } else {
+      upd(2 * v + 1, tm + 1, tr, pos, val);
+    }
+    t[v] = combine(t[2 * v], t[2 * v + 1]);
+  }
+}
+
 void solve() {
-  ios::sync_with_stdio(false);
-  cin.tie(nullptr);
+  ll n, m;
+  cin >> n >> m;
 
-  int n;
-  cin >> n;
-  vector<int> f(n);
-  for (int i = 0; i < n; i++)
-    cin >> f[i];
-
-  build(f);
-
-  unordered_map<int, vector<int>> pos;
-  pos.reserve(n * 2);
-  for (int i = 0; i < n; i++) {
-    pos[f[i]].push_back(i);
+  vector<ll> a(n + 1);
+  for (size_t i = 1; i <= n; i++) {
+    cin >> a[i];
   }
 
-  int q;
-  cin >> q;
-  while (q--) {
-    int l, r;
-    cin >> l >> r;
-    --l;
-    --r;
-    int g = query_gcd(l, r);
-    auto &v = pos[g];
-    int cnt =
-        upper_bound(v.begin(), v.end(), r) - lower_bound(v.begin(), v.end(), l);
-    cout << (r - l + 1) - cnt << "\n";
+  t.assign(4 * n, {0, 0, 0, 0});
+  build(a, 1, 1, n);
+
+  for (size_t i = 0; i < m; i++) {
+    ll k, x;
+    cin >> k >> x;
+    upd(1, 1, n, k, x);
+    cout << t[1].ans << "\n";
   }
 }
 
