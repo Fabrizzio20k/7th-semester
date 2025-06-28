@@ -1,14 +1,15 @@
 import cv2
 import numpy as np
 from ultralytics import YOLO, SAM
+import time
 
 
 def highlight_people_cars_and_bikes(full_path_input_image, color_scale_image, color_scale_people, color_scale_cars, color_scale_bikes, full_path_output_image):
     i = cv2.imread(full_path_input_image)
     h, w = i.shape[:2]
 
-    yl = YOLO('yolov8_l.pt')
-    sm = SAM('sam2.1_b.pt')
+    yl = YOLO('yolov8l.pt')
+    sm = SAM('sam2.1_t.pt')
 
     r = yl(i, conf=0.3, verbose=False)[0]
 
@@ -41,11 +42,15 @@ def highlight_people_cars_and_bikes(full_path_input_image, color_scale_image, co
 
 
 if __name__ == "__main__":
+    # La primera vez demora mas de 5 segundos al cargar los modelos por primera vez, luego es mas rapido
+    start = time.time()
     highlight_people_cars_and_bikes(
-        full_path_input_image='p3.jpg',
+        full_path_input_image='p1.jpeg',
         color_scale_image=(255, 255, 255),
         color_scale_people=(0, 255, 0),
         color_scale_cars=(0, 0, 255),
         color_scale_bikes=(255, 0, 0),
         full_path_output_image='output.jpg'
     )
+    end = time.time()
+    print(f"Execution time: {end - start:.2f} seconds")
