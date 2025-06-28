@@ -43,7 +43,8 @@ def leer_ply(path):
 
 
 def project_points(full_path_input_mesh, optical_center_x, optical_center_y, optical_center_z,
-                   optical_axis_x, optical_axis_y, optical_axis_z, focal_distance,
+                   optical_axis_x, optical_axis_y, optical_axis_z,
+                   up_vector_x, up_vector_y, up_vector_z, focal_distance,
                    output_width_in_pixels, output_height_in_pixels, full_path_output):
 
     v, c = leer_ply(full_path_input_mesh)
@@ -52,17 +53,28 @@ def project_points(full_path_input_mesh, optical_center_x, optical_center_y, opt
                   optical_center_z], dtype=np.float32)
     oa = np.array([optical_axis_x, optical_axis_y,
                   optical_axis_z], dtype=np.float32)
+    up = np.array([up_vector_x, up_vector_y, up_vector_z], dtype=np.float32)
 
     oa = oa / np.linalg.norm(oa)
+    up = up / np.linalg.norm(up)
 
     z_c = -oa
 
-    if abs(z_c[0]) < 0.9:
-        x_c = np.cross(z_c, np.array([1, 0, 0], dtype=np.float32))
-    else:
-        x_c = np.cross(z_c, np.array([0, 1, 0], dtype=np.float32))
+    # Verificar si up y z_c son paralelos
+    cross_prod = np.cross(up, z_c)
+    cross_norm = np.linalg.norm(cross_prod)
 
-    x_c = x_c / np.linalg.norm(x_c)
+    if cross_norm < 1e-6:  # Vectores casi paralelos
+        # Usar vector alternativo
+        if abs(z_c[0]) < 0.9:
+            alt_up = np.array([1.0, 0.0, 0.0], dtype=np.float32)
+        else:
+            alt_up = np.array([0.0, 1.0, 0.0], dtype=np.float32)
+        x_c = np.cross(alt_up, z_c)
+        x_c = x_c / np.linalg.norm(x_c)
+    else:
+        x_c = cross_prod / cross_norm
+
     y_c = np.cross(z_c, x_c)
     y_c = y_c / np.linalg.norm(y_c)
 
@@ -111,7 +123,8 @@ def project_points(full_path_input_mesh, optical_center_x, optical_center_y, opt
 
 
 def sequence_of_projections(full_path_input_mesh, optical_center_x, optical_center_y, optical_center_z,
-                            optical_axis_x, optical_axis_y, optical_axis_z, focal_distance,
+                            optical_axis_x, optical_axis_y, optical_axis_z,
+                            up_vector_x, up_vector_y, up_vector_z, focal_distance,
                             output_width_in_pixels, output_height_in_pixels, prefix_output_files):
 
     n_frames = len(optical_center_x)
@@ -127,87 +140,11 @@ def sequence_of_projections(full_path_input_mesh, optical_center_x, optical_cent
             optical_axis_x[i],
             optical_axis_y[i],
             optical_axis_z[i],
-            focal_distance,
+            up_vector_x[i],
+            up_vector_y[i],
+            up_vector_z[i],
+            focal_distance[i],
             output_width_in_pixels,
             output_height_in_pixels,
             output_path
         )
-
-
-def gen_ply(path, v, c=None):
-    with open(path, 'w') as f:
-        f.write('ply\n')
-        f.write('format ascii 1.0\n')
-        f.write(f'element vertex {len(v)}\n')
-        f.write('property float x\n')
-        f.write('property float y\n')
-        f.write('property float z\n')
-
-        if c is not None:
-            f.write('property uchar red\n')
-            f.write('property uchar green\n')
-            f.write('property uchar blue\n')
-
-        f.write('end_header\n')
-
-        for i in range(len(v)):
-            if c is not None:
-                f.write(
-                    f'{v[i][0]} {v[i][1]} {v[i][2]} {c[i][0]} {c[i][1]} {c[i][2]}\n')
-            else:
-                f.write(f'{v[i][0]} {v[i][1]} {v[i][2]}\n')
-
-
-def gen_esfera(r=1, res=50):
-    v = []
-    c = []
-
-    for i in range(res):
-        theta = i * np.pi / (res - 1)
-        for j in range(res):
-            phi = j * 2 * np.pi / res
-
-            x = r * np.sin(theta) * np.cos(phi)
-            y = r * np.sin(theta) * np.sin(phi)
-            z = r * np.cos(theta)
-
-            v.append([x, y, z])
-
-            col_r = int(255 * (x + r) / (2 * r))
-            col_g = int(255 * (y + r) / (2 * r))
-            col_b = int(255 * (z + r) / (2 * r))
-            c.append([col_r, col_g, col_b])
-
-    return np.array(v), np.array(c, dtype=np.uint8)
-
-
-if __name__ == "__main__":
-    import math
-
-    verts, colors = gen_esfera(2, 100)
-    gen_ply('esfera.ply', verts, colors)
-
-    n = 36
-    r = 5.0
-
-    pos_x = [r * math.cos(2 * math.pi * i / n) for i in range(n)]
-    pos_y = [r * math.sin(2 * math.pi * i / n) for i in range(n)]
-    pos_z = [2.0] * n
-
-    ax_x = [-math.cos(2 * math.pi * i / n) for i in range(n)]
-    ax_y = [-math.sin(2 * math.pi * i / n) for i in range(n)]
-    ax_z = [-0.4] * n
-
-    sequence_of_projections(
-        full_path_input_mesh='esfera.ply',
-        optical_center_x=pos_x,
-        optical_center_y=pos_y,
-        optical_center_z=pos_z,
-        optical_axis_x=ax_x,
-        optical_axis_y=ax_y,
-        optical_axis_z=ax_z,
-        focal_distance=500,
-        output_width_in_pixels=800,
-        output_height_in_pixels=600,
-        prefix_output_files='anim/frame'
-    )
