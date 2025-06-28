@@ -43,7 +43,8 @@ def leer_ply(path):
 
 
 def project_points(full_path_input_mesh, optical_center_x, optical_center_y, optical_center_z,
-                   optical_axis_x, optical_axis_y, optical_axis_z, focal_distance,
+                   optical_axis_x, optical_axis_y, optical_axis_z,
+                   up_vector_x, up_vector_y, up_vector_z, focal_distance,
                    output_width_in_pixels, output_height_in_pixels, full_path_output):
 
     v, c = leer_ply(full_path_input_mesh)
@@ -52,17 +53,16 @@ def project_points(full_path_input_mesh, optical_center_x, optical_center_y, opt
                   optical_center_z], dtype=np.float32)
     oa = np.array([optical_axis_x, optical_axis_y,
                   optical_axis_z], dtype=np.float32)
+    up = np.array([up_vector_x, up_vector_y, up_vector_z], dtype=np.float32)
 
     oa = oa / np.linalg.norm(oa)
+    up = up / np.linalg.norm(up)
 
     z_c = -oa
 
-    if abs(z_c[0]) < 0.9:
-        x_c = np.cross(z_c, np.array([1, 0, 0], dtype=np.float32))
-    else:
-        x_c = np.cross(z_c, np.array([0, 1, 0], dtype=np.float32))
-
+    x_c = np.cross(up, z_c)
     x_c = x_c / np.linalg.norm(x_c)
+
     y_c = np.cross(z_c, x_c)
     y_c = y_c / np.linalg.norm(y_c)
 
@@ -108,14 +108,3 @@ def project_points(full_path_input_mesh, optical_center_x, optical_center_y, opt
 
     img = Image.fromarray(img_arr)
     img.save(full_path_output)
-
-
-if __name__ == "__main__":
-    project_points(
-        'esfera.ply',
-        0, 0, 0,
-        0, 0, -1,
-        1,
-        800, 600,
-        'output_image.png'
-    )
