@@ -1,72 +1,88 @@
 import cv2
 from ultralytics import YOLO
-import numpy as np
+from time import time
 
 
 def count_people_cars_and_bikes(full_path_input_video):
-    m = YOLO('yolov7.pt')
+    model = YOLO('yolov8l.pt')
+    cap = cv2.VideoCapture(full_path_input_video)
 
-    v = cv2.VideoCapture(full_path_input_video)
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    fps = int(v.get(cv2.CAP_PROP_FPS))
-    tc = int(v.get(cv2.CAP_PROP_FRAME_COUNT))
+    skip_frames = max(1, fps // 4)
 
-    s = max(1, fps // 5)
+    people_seen = set()
+    bikes_seen = set()
+    cars_seen = set()
 
-    p_ids = set()
-    b_ids = set()
-    c_ids = set()
+    frame_num = 0
 
-    f = 0
     while True:
-        ret, fr = v.read()
+        ret, frame = cap.read()
         if not ret:
             break
 
-        if f % s == 0:
-            h, w = fr.shape[:2]
-            if w > 1280:
-                nw = 1280
-                nh = int(h * 1280 / w)
-                fr = cv2.resize(fr, (nw, nh))
+        if frame_num % skip_frames == 0:
+            height, width = frame.shape[:2]
+            if width > 1280:
+                new_width = 1280
+                new_height = int(height * 1280 / width)
+                frame = cv2.resize(frame, (new_width, new_height))
 
-            r = m(fr, conf=0.5, verbose=False)[0]
+            results = model(frame, conf=0.65, verbose=False)[0]
 
-            if r.boxes is not None:
-                for bx in r.boxes:
-                    cl = int(bx.cls)
-                    cf = float(bx.conf)
+            if results.boxes is not None:
+                for box in results.boxes:
+                    class_id = int(box.cls)
+                    confidence = float(box.conf)
 
-                    if cf > 0.5:
-                        x1, y1, x2, y2 = bx.xyxy[0].tolist()
-                        cx = (x1 + x2) / 2
-                        cy = (y1 + y2) / 2
+                    if confidence > 0.65:
+                        x1, y1, x2, y2 = box.xyxy[0].tolist()
 
-                        id_obj = f"{cl}_{int(cx/50)}_{int(cy/50)}"
+                        area = (x2 - x1) * (y2 - y1)
+                        min_areas = {0: 1000, 1: 1500, 2: 2500}
 
-                        if cl == 0:
-                            p_ids.add(id_obj)
-                        elif cl == 1:
-                            b_ids.add(id_obj)
-                        elif cl == 2:
-                            c_ids.add(id_obj)
+                        if area >= min_areas.get(class_id, 1000):
+                            center_x = (x1 + x2) / 2
+                            center_y = (y1 + y2) / 2
 
-        f += 1
+                            grid_sizes = {0: 200, 1: 250, 2: 300}
+                            grid_size = grid_sizes.get(class_id, 200)
 
-        if f % 500 == 0:
-            print(f"Frame {f}/{tc}")
+                            grid_x = int(center_x / grid_size)
+                            grid_y = int(center_y / grid_size)
 
-    v.release()
+                            time_window = frame_num // (fps * 3)
 
-    np = len(p_ids)
-    nb = len(b_ids)
-    nc = len(c_ids)
+                            obj_id = f"{grid_x}_{grid_y}_{time_window}"
 
-    return [np, nb, nc]
+                            if class_id == 0:  # Persona
+                                people_seen.add(obj_id)
+                            elif class_id == 1:  # Bicicleta
+                                bikes_seen.add(obj_id)
+                            elif class_id == 2:  # Carro
+                                cars_seen.add(obj_id)
+
+        frame_num += 1
+
+        if frame_num % 500 == 0:
+            print(
+                f"Frame {frame_num}/{total_frames} - People: {len(people_seen)}, Bikes: {len(bikes_seen)}, Cars: {len(cars_seen)}")
+
+    cap.release()
+    return [len(people_seen), len(bikes_seen), len(cars_seen)]
 
 
 if __name__ == "__main__":
 
+    # El tiempo es mayor la primera vez que se ejecuta, ya que el modelo se carga y se inicializa, luego es más rápido
+    start_time = time()
+
     video_path = "video.mp4"
     result = count_people_cars_and_bikes(video_path)
-    print(f"People: {result[0]}, Bikes: {result[1]}, Cars: {result[2]}")
+    print(
+        f"Resultado final - People: {result[0]}, Bikes: {result[1]}, Cars: {result[2]}")
+
+    end_time = time()
+    print(f"Tiempo de ejecución: {end_time - start_time:.2f} segundos")
