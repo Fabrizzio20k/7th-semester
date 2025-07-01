@@ -60,12 +60,10 @@ def project_points(full_path_input_mesh, optical_center_x, optical_center_y, opt
 
     z_c = -oa
 
-    # Verificar si up y z_c son paralelos
     cross_prod = np.cross(up, z_c)
     cross_norm = np.linalg.norm(cross_prod)
 
-    if cross_norm < 1e-6:  # Vectores casi paralelos
-        # Usar vector alternativo
+    if cross_norm < 1e-6:
         if abs(z_c[0]) < 0.9:
             alt_up = np.array([1.0, 0.0, 0.0], dtype=np.float32)
         else:
@@ -148,3 +146,22 @@ def sequence_of_projections(full_path_input_mesh, optical_center_x, optical_cent
             output_height_in_pixels,
             output_path
         )
+
+
+if __name__ == "__main__":
+    sequence_of_projections(
+        full_path_input_mesh="mesh.ply",
+        optical_center_x=[0, 0, 0],
+        optical_center_y=[0, 0, 0],
+        optical_center_z=[0, 0, 0],
+        optical_axis_x=[0, 0, 0],
+        optical_axis_y=[0, 0, 1],
+        optical_axis_z=[0, 1, 0],
+        up_vector_x=[0, 1, 0],
+        up_vector_y=[0, 0, 0],
+        up_vector_z=[1, 0, 0],
+        focal_distance=[500, 500, 500],
+        output_width_in_pixels=800,
+        output_height_in_pixels=600,
+        prefix_output_files="output/frame"
+    )

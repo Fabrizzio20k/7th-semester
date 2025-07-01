@@ -108,3 +108,23 @@ def project_points(full_path_input_mesh, optical_center_x, optical_center_y, opt
 
     img = Image.fromarray(img_arr)
     img.save(full_path_output)
+
+
+if __name__ == "__main__":
+    # Example usage
+    project_points(
+        full_path_input_mesh='esfera.ply',
+        optical_center_x=0.0,
+        optical_center_y=0.0,
+        optical_center_z=0.0,
+        optical_axis_x=0.0,
+        optical_axis_y=0.0,
+        optical_axis_z=-1.0,
+        up_vector_x=0.0,
+        up_vector_y=1.0,
+        up_vector_z=0.0,
+        focal_distance=1.0,
+        output_width_in_pixels=640,
+        output_height_in_pixels=480,
+        full_path_output='prueba.png'
+    )
