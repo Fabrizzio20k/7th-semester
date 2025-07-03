@@ -1,5 +1,6 @@
 import numpy as np
 from PIL import Image
+import math
 
 
 def leer_ply(path):
@@ -55,8 +56,19 @@ def project_points(full_path_input_mesh, optical_center_x, optical_center_y, opt
                   optical_axis_z], dtype=np.float32)
     up = np.array([up_vector_x, up_vector_y, up_vector_z], dtype=np.float32)
 
-    oa = oa / np.linalg.norm(oa)
-    up = up / np.linalg.norm(up)
+    if np.linalg.norm(oa) < 1e-6:
+        print(
+            "Warning: optical_axis es vector cero, usando valor por defecto [0, 0, -1]")
+        oa = np.array([0, 0, -1], dtype=np.float32)
+    else:
+        oa = oa / np.linalg.norm(oa)
+
+    if np.linalg.norm(up) < 1e-6:
+        print(
+            "Warning: up_vector es vector cero, usando valor por defecto [0, 1, 0]")
+        up = np.array([0, 1, 0], dtype=np.float32)
+    else:
+        up = up / np.linalg.norm(up)
 
     z_c = -oa
 
@@ -149,18 +161,67 @@ def sequence_of_projections(full_path_input_mesh, optical_center_x, optical_cent
 
 
 if __name__ == "__main__":
+    n_frames = 10
+
+    radius = 5.0
+
+    camera_height = 2.0
+
+    optical_center_x = []
+    optical_center_y = []
+    optical_center_z = []
+    optical_axis_x = []
+    optical_axis_y = []
+    optical_axis_z = []
+    up_vector_x = []
+    up_vector_y = []
+    up_vector_z = []
+    focal_distance = []
+
+    for i in range(n_frames):
+        angle = (2 * math.pi * i) / n_frames
+
+        cam_x = radius * math.cos(angle)
+        cam_y = camera_height
+        cam_z = radius * math.sin(angle)
+
+        target_x, target_y, target_z = 0, 0, 0
+
+        axis_x = target_x - cam_x
+        axis_y = target_y - cam_y
+        axis_z = target_z - cam_z
+
+        axis_length = math.sqrt(axis_x**2 + axis_y**2 + axis_z**2)
+        if axis_length > 0:
+            axis_x /= axis_length
+            axis_y /= axis_length
+            axis_z /= axis_length
+
+        up_x, up_y, up_z = 0, 1, 0
+
+        optical_center_x.append(cam_x)
+        optical_center_y.append(cam_y)
+        optical_center_z.append(cam_z)
+        optical_axis_x.append(axis_x)
+        optical_axis_y.append(axis_y)
+        optical_axis_z.append(axis_z)
+        up_vector_x.append(up_x)
+        up_vector_y.append(up_y)
+        up_vector_z.append(up_z)
+        focal_distance.append(500)
+
     sequence_of_projections(
-        full_path_input_mesh="mesh.ply",
-        optical_center_x=[0, 0, 0],
-        optical_center_y=[0, 0, 0],
-        optical_center_z=[0, 0, 0],
-        optical_axis_x=[0, 0, 0],
-        optical_axis_y=[0, 0, 1],
-        optical_axis_z=[0, 1, 0],
-        up_vector_x=[0, 1, 0],
-        up_vector_y=[0, 0, 0],
-        up_vector_z=[1, 0, 0],
-        focal_distance=[500, 500, 500],
+        full_path_input_mesh="esfera.ply",
+        optical_center_x=optical_center_x,
+        optical_center_y=optical_center_y,
+        optical_center_z=optical_center_z,
+        optical_axis_x=optical_axis_x,
+        optical_axis_y=optical_axis_y,
+        optical_axis_z=optical_axis_z,
+        up_vector_x=up_vector_x,
+        up_vector_y=up_vector_y,
+        up_vector_z=up_vector_z,
+        focal_distance=focal_distance,
         output_width_in_pixels=800,
         output_height_in_pixels=600,
         prefix_output_files="output/frame"
