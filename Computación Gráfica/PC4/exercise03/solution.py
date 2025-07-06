@@ -3,6 +3,12 @@ import numpy as np
 from time import time
 
 
+def encontrar_contorno_convexo(kps):
+    puntos = np.array([[int(kp.pt[0]), int(kp.pt[1])] for kp in kps])
+    hull = cv2.convexHull(puntos)
+    return hull.reshape(-1, 2)
+
+
 def load_ply_mesh(ruta):
     verts = []
     caras = []
@@ -40,35 +46,38 @@ def detectar_qr(img):
     ret, pts = det.detect(img)
 
     if ret:
-        return pts[0]
+        return ordenar_puntos_rectangulo(pts[0])
 
     gris = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    orb = cv2.ORB_create(nfeatures=1500)
-    kps, desc = orb.detectAndCompute(gris, None)
+    sift = cv2.SIFT_create()
+    kps, desc = sift.detectAndCompute(gris, None)
 
-    if len(kps) > 70:
-        x_coords = [kp.pt[0] for kp in kps]
-        y_coords = [kp.pt[1] for kp in kps]
+    if len(kps) > 50:
+        hull = encontrar_contorno_convexo(kps)
+        epsilon = 0.02 * cv2.arcLength(hull, True)
+        approx = cv2.approxPolyDP(hull, epsilon, True)
 
-        x_min = min(x_coords)
-        x_max = max(x_coords)
-        y_min = min(y_coords)
-        y_max = max(y_coords)
-
-        w = x_max - x_min
-        h = y_max - y_min
-
-        if w > 50 and h > 50:
-            return np.array([[x_min, y_min], [x_max, y_min], [x_max, y_max], [x_min, y_max]])
+        if len(approx) == 4:
+            return ordenar_puntos_rectangulo(approx.reshape(-1, 2).astype(np.float32))
 
     return None
+
+
+def ordenar_puntos_rectangulo(pts):
+    pts = pts.reshape(-1, 2)
+    centro = np.mean(pts, axis=0)
+
+    angulos = np.arctan2(pts[:, 1] - centro[1], pts[:, 0] - centro[0])
+    indices = np.argsort(angulos)
+
+    return pts[indices]
 
 
 def calcular_pose(pts_2d, K):
     if pts_2d is None:
         return None, None
 
-    tam_real = 100.0
+    tam_real = 20.0
     pts_3d = np.array([
         [-tam_real/2, -tam_real/2, 0],
         [tam_real/2, -tam_real/2, 0],
@@ -88,21 +97,13 @@ def calcular_pose(pts_2d, K):
 def ajustar_mesh_a_marcador(vs, pts_2d):
     bb_min = np.min(vs, axis=0)
     bb_max = np.max(vs, axis=0)
-    bb_tam = bb_max - bb_min
     bb_centro = (bb_min + bb_max) / 2
 
     vs_centrados = vs - bb_centro
     vs_centrados[:, 2] += abs(bb_min[2])
 
-    if pts_2d is not None:
-        x_min = np.min(pts_2d[:, 0])
-        x_max = np.max(pts_2d[:, 0])
-        y_min = np.min(pts_2d[:, 1])
-        y_max = np.max(pts_2d[:, 1])
-
-        tam_marcador_px = max(x_max - x_min, y_max - y_min)
-        escala = tam_marcador_px * 0.8 / max(bb_tam[0], bb_tam[1])
-        vs_centrados *= escala
+    escala = 15.0 / max(bb_max[0] - bb_min[0], bb_max[1] - bb_min[1])
+    vs_centrados *= escala
 
     return vs_centrados
 
@@ -188,7 +189,6 @@ def dibujar_mesh_con_luz(img, vs_2d, caras, vs_3d, R):
 
             pts = pts.reshape((-1, 1, 2))
             cv2.fillPoly(img, [pts], color)
-            cv2.polylines(img, [pts], True, (0, 0, 0), 1)
 
     return img
 
@@ -226,6 +226,6 @@ def draw_mesh_on_top_of_marker(full_path_input_image, full_path_mesh, full_path_
 
 if __name__ == "__main__":
     time_start = time()
-    draw_mesh_on_top_of_marker('p4.jpg', 'cubo.ply', 'output.jpg')
+    draw_mesh_on_top_of_marker('p8.jpg', 'cubo.ply', 'output.jpg')
     time_end = time()
     print(f"Tiempo de ejecución: {time_end - time_start: .2f} segundos")
